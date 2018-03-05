@@ -382,11 +382,11 @@ namespace vg {
                 // overlaps the clump. It belongs in the clump
                 clump.push_back(&(*next_variant));
                 // It may make the clump longer and necessitate adding more variants.
-                if (!next_variant->is_sv()){
-                    clump_end = max(clump_end, next_variant->position + next_variant->ref.size() - chunk_offset);
+                if (next_variant->is_sv() && do_svs){
+                    clump_end = max(clump_end, next_variant->position + (long) next_variant->get_sv_len(0) - chunk_offset);
                 }
                 else{
-                    clump_end = max(clump_end, next_variant->position + (long) next_variant->get_sv_len(0) - chunk_offset);
+                    clump_end = max(clump_end, next_variant->position + next_variant->ref.size() - chunk_offset);
                 }
 
                 // Try the variant after that
@@ -522,7 +522,7 @@ namespace vg {
                     // Get the variable bounds in VCF space for all the trimmed alts of this variant
                     // Note: we still want bounds for SVs, we just have to get them differently
                     std::pair<int64_t, int64_t> bounds;
-                    if (variant->is_sv()){
+                    if (do_svs && variant->is_sv()){
                         bounds = get_bounds(*variant, true);
                     }
                     else{
@@ -597,7 +597,7 @@ namespace vg {
                         }
 
                         // SV HAX
-                        if (variant->is_sv()){
+                        if (do_svs && variant->is_sv()){
                             // Get SV start and end
                             // and the SV tag
                             vector<string> tags = variant->sv_tags();
@@ -1423,12 +1423,6 @@ namespace vg {
 
             auto vvar = variant_source.get();
 
-            if (do_svs) {
-                variant_acceptable = vvar->canonicalize_sv(reference, insertions, true, -1);
-               // now called implicitly in canonicalize: vvar->set_insertion_sequences(insertions);
-                
-            }
-
             for (string& alt : vvar->alt) {
                 // Validate each alt of the variant
 
@@ -1451,6 +1445,12 @@ namespace vg {
                     }
                     break;
                 }
+            }
+
+            if (do_svs && vvar->is_sv()) {
+                variant_acceptable = vvar->canonicalize_sv(reference, insertions, true, -1);
+               // now called implicitly in canonicalize: vvar->set_insertion_sequences(insertions);
+                
             }
             if (!variant_acceptable) {
                 // Skip variants that have symbolic alleles or other nonsense we can't parse.
