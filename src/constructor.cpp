@@ -152,11 +152,11 @@ namespace vg {
         if (var.is_sv()){
             start = min(start, (int64_t) var.position);
             end = max(end, (int64_t) var.get_sv_end(0));
-            return std::make_pair( start, end);
         }
         else{
             
         }
+        return std::make_pair( start, end);
     }
 
     pair<int64_t, int64_t> Constructor::get_bounds(const vector<list<vcflib::VariantAllele>>& trimmed_variant) {
