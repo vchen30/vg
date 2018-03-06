@@ -152,11 +152,11 @@ namespace vg {
         if (var.is_sv()){
             start = min(start, (int64_t) var.position);
             end = max(end, (int64_t) var.get_sv_end(0));
-            return std::make_pair( start, end);
         }
         else{
             
         }
+        return std::make_pair( start, end);
     }
 
     pair<int64_t, int64_t> Constructor::get_bounds(const vector<list<vcflib::VariantAllele>>& trimmed_variant) {
@@ -1417,12 +1417,15 @@ namespace vg {
                 variant_source.get()->position + variant_source.get()->ref.size() <= reference_end) {
 
             // While we have variants we want to include
-
-            bool variant_acceptable = true;
-
-
             auto vvar = variant_source.get();
 
+            bool variant_acceptable = !vvar->is_sv();
+
+            if (do_svs && vvar->is_sv()) {
+                variant_acceptable = vvar->canonicalize_sv(reference, insertions, true, -1);
+               // now called implicitly in canonicalize: vvar->set_insertion_sequences(insertions);
+                
+            }
             for (string& alt : vvar->alt) {
                 // Validate each alt of the variant
 
@@ -1447,11 +1450,6 @@ namespace vg {
                 }
             }
 
-            if (do_svs && vvar->is_sv()) {
-                variant_acceptable = vvar->canonicalize_sv(reference, insertions, true, -1);
-               // now called implicitly in canonicalize: vvar->set_insertion_sequences(insertions);
-                
-            }
             if (!variant_acceptable) {
                 // Skip variants that have symbolic alleles or other nonsense we can't parse.
                 variant_source.handle_buffer();
